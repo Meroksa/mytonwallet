@@ -338,14 +338,6 @@ function SwapInitial({
 
       if (isNativeIn) {
         maxAmount -= networkFeeBigint;
-
-        if (swapType === SwapType.OnChain) {
-          const amountForNextSwap = chainConfigIn?.gas.maxSwap ?? 0n;
-          const shouldIgnoreNextSwap = amountInBigint > 0n && (maxAmount - amountInBigint) <= amountForNextSwap;
-          if (!shouldIgnoreNextSwap && maxAmount > amountForNextSwap) {
-            maxAmount -= amountForNextSwap;
-          }
-        }
       }
 
       const amount = toDecimal(maxAmount, tokenIn!.decimals);
@@ -529,8 +521,7 @@ function SwapInitial({
       && !isLoading
       && swapFee
       && tokenIn
-      && tokenIn.slug !== TONCOIN.slug
-      && tokenOut?.slug === TONCOIN.slug,
+      && tokenIn.slug !== TONCOIN.slug,
     );
 
     if (shouldRenderDieselSwapFee) {
@@ -540,12 +531,26 @@ function SwapInitial({
         </span>
       );
     } else if (nativeUserTokenIn) {
-      feeBlock = (
-        <span className={styles.feeText}>{lang(isFeeEqualZero ? '$fee_value' : '$fee_value_almost_equal', {
-          fee: formatCurrency(visibleNetworkFee, nativeUserTokenIn.symbol, undefined, true),
-        })}
-        </span>
-      );
+      if (!isEnoughNative && isTonIn && !isFeeEqualZero) {
+        feeBlock = (
+          <span className={styles.feeText}>{lang('$fee_value_less', {
+            fee: formatCurrency(
+              toDecimal(totalNativeAmount, nativeUserTokenIn.decimals),
+              nativeUserTokenIn.symbol,
+              undefined,
+              true,
+            ),
+          })}
+          </span>
+        );
+      } else {
+        feeBlock = (
+          <span className={styles.feeText}>{lang(isFeeEqualZero ? '$fee_value' : '$fee_value_almost_equal', {
+            fee: formatCurrency(visibleNetworkFee, nativeUserTokenIn.symbol, undefined, true),
+          })}
+          </span>
+        );
+      }
     }
 
     const priceBlock = renderPrice();
